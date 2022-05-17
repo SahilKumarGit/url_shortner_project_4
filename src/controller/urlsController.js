@@ -45,7 +45,7 @@ const create = async (req, res) => {
             __v: 0
         })
         if (isExistLongUrl) return res.status(200).send({
-            status: false,
+            status: true,
             data: isExistLongUrl
         })
 
