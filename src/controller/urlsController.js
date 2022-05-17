@@ -64,21 +64,36 @@ const create = async (req, res) => {
         })
     } catch (e) {
         res.status(500).send({
-            status: !true,
+            status: false,
             message: e.message
         })
     }
 }
 
+const redirectUrl = async (req, res) => {
+
+    try {
+        const urlCode = req.params.urlCode
+
+        const chkUrlCode = await urlModel.findOne({ urlCode: urlCode })
+
+        if (!chkUrlCode) return res.status(404).send({ status: false, message: "Url Not Found!" })
+
+        res.writeHead(301, { "Location": chkUrlCode.longUrl });
+        res.end()
 
 
+    } catch (err) {
+        res.status(500).send({
+            status: false,
+            message: e.message
+        })
+    }
 
-
-
-
+}
 
 
 
 module.exports = {
-    create
+    create, redirectUrl
 }
