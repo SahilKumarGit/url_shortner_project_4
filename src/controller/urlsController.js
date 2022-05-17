@@ -3,9 +3,8 @@ const validation = require('./../utility/validation');
 const urlModel = require('./../models/urlModel');
 const create = async (req, res) => {
     try {
-        // console.log(shortid.generate());
         const data = req.body
-        const sortUrlDomain = 'http://localhost:3000'
+        const sortUrlDomain = `${req.protocol}://${req.headers.host}`
 
         if (validation.emptyObject(data)) return res.status(400).send({
             status: false,
@@ -75,11 +74,18 @@ const redirectUrl = async (req, res) => {
     try {
         const urlCode = req.params.urlCode
 
-        const chkUrlCode = await urlModel.findOne({ urlCode: urlCode })
+        const chkUrlCode = await urlModel.findOne({
+            urlCode: urlCode
+        })
 
-        if (!chkUrlCode) return res.status(404).send({ status: false, message: "Url Not Found!" })
+        if (!chkUrlCode) return res.status(404).send({
+            status: false,
+            message: "Url Not Found!"
+        })
 
-        res.writeHead(301, { "Location": chkUrlCode.longUrl });
+        res.writeHead(301, {
+            "Location": chkUrlCode.longUrl
+        });
         res.end()
 
 
@@ -95,5 +101,6 @@ const redirectUrl = async (req, res) => {
 
 
 module.exports = {
-    create, redirectUrl
+    create,
+    redirectUrl
 }
