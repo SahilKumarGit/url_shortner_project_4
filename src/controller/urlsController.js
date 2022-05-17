@@ -26,7 +26,7 @@ const create = async (req, res) => {
         })
 
         /*------ generate short id -------*/
-        const urlCode = shortid.generate();
+        const urlCode = shortid.generate().toLowerCase();
 
         /*------ check if unique id already exist or NOT -------*/
         const isExistUrlCode = await urlModel.findOne({
