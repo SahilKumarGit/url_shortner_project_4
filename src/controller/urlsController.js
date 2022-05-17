@@ -32,7 +32,7 @@ const create = async (req, res) => {
         const isExistUrlCode = await urlModel.findOne({
             urlCode: urlCode
         })
-        if (isExistUrlCode) return res.status(500).send({
+        if (isExistUrlCode) return res.status(404).send({
             status: false,
             message: `Something wents worng, generated urlCode is already exist. Please try again!`
         })
