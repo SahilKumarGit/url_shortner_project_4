@@ -1,125 +1,144 @@
-const shortid = require('shortid');
-const validation = require('./../utility/validation');
-const urlModel = require('./../models/urlModel');
+const shortid = require("shortid");
+const validation = require("./../utility/validation");
+const urlModel = require("./../models/urlModel");
 const {
     SET_ASYNC,
     GET_ASYNC
-} = require('../redis.config');
+} = require("../redis.config");
 
 const create = async (req, res) => {
     try {
-        const data = req.body
-        const sortUrlDomain = `${req.protocol}://${req.headers.host}`
+        const data = req.body;
+        const sortUrlDomain = `${req.protocol}://${req.headers.host}`;
 
-        if (validation.emptyObject(data)) return res.status(400).send({
-            status: false,
-            message: "POST body must be required!"
-        })
+        if (validation.emptyObject(data))
+            return res.status(400).send({
+                status: false,
+                message: "POST body must be required!",
+            });
 
         let {
             longUrl
-        } = data
+        } = data;
 
-        if (validation.isEmpty(longUrl)) return res.status(400).send({
-            status: false,
-            message: "longUrl must be required!"
-        })
+        if (validation.isEmpty(longUrl))
+            return res.status(400).send({
+                status: false,
+                message: "longUrl must be required!",
+            });
 
-        if (validation.notURL(longUrl)) return res.status(400).send({
-            status: false,
-            message: `'${longUrl}' is NOT a valid Url!`
-        })
+        if (validation.notURL(longUrl))
+            return res.status(400).send({
+                status: false,
+                message: `'${longUrl}' is NOT a valid Url!`,
+            });
+
+
+
+
+
+        const getUrlFromCatch = await GET_ASYNC(`URLX_${longUrl}`);
+        if (getUrlFromCatch) {
+            //return data
+            // console.log('get data from cache')
+            const urlData = JSON.parse(getUrlFromCatch)
+            return res.status(200).send({
+                status: true,
+                data: {
+                    urlCode: urlData.urlCode,
+                    longUrl: urlData.longUrl,
+                    shortUrl: urlData.shortUrl
+                },
+            });
+        }
+
+
+        /*------ check if unique id already exist or NOT -------*/
+        const isExistLongUrl = await urlModel
+            .findOne({
+                longUrl,
+            })
+            .select({
+                _id: 0,
+                __v: 0,
+            });
+
+        if (isExistLongUrl) {
+            // console.log('get data DB and its already exist')
+            await SET_ASYNC(`URLX_${longUrl}`, JSON.stringify(isExistLongUrl));
+            return res.status(200).send({
+                status: true,
+                data: isExistLongUrl,
+            });
+        }
 
         /*------ generate short id -------*/
         const urlCode = shortid.generate().toLowerCase();
 
-        /*------ check if unique id already exist or NOT -------*/
-        const isExistUrlCode = await urlModel.findOne({
-            urlCode: urlCode
-        })
-        if (isExistUrlCode) return res.status(404).send({  //⚠️
-            status: false,
-            message: `Something wents worng, generated urlCode is already exist. Please try again!`
-        })
-
-        /*------ check if unique id already exist or NOT -------*/
-        const isExistLongUrl = await urlModel.findOne({
-            longUrl
-        }).select({
-            _id: 0,
-            __v: 0
-        })
-        if (isExistLongUrl) return res.status(200).send({
-            status: true,
-            data: isExistLongUrl
-        })
-
         const rawData = {
             urlCode,
             longUrl,
-            shortUrl: `${sortUrlDomain}/${urlCode}`
-        }
+            shortUrl: `${sortUrlDomain}/${urlCode}`,
+        };
 
         /*--------- save in db ----------*/
-        await urlModel.create(rawData)
+        await urlModel.create(rawData);
+        // console.log('newly created data')
+        await SET_ASYNC(`URLX_${longUrl}`, JSON.stringify(rawData)); //
         res.status(200).send({
             status: true,
-            data: rawData
-        })
+            data: rawData,
+        });
     } catch (e) {
         res.status(500).send({
             status: false,
-            message: e.message
-        })
+            message: e.message,
+        });
     }
-}
+};
 
 const redirectUrl = async (req, res) => {
     try {
-        const urlCode = req.params.urlCode
-        const getUrlFromCatch = await GET_ASYNC(urlCode)
+        const urlCode = req.params.urlCode;
+        const getUrlFromCatch = await GET_ASYNC(urlCode);
         if (getUrlFromCatch) {
-            console.log("From Redis")
-            let urlData = JSON.parse(getUrlFromCatch)
+            // console.log("From Redis");
+            let urlData = JSON.parse(getUrlFromCatch);
             res.writeHead(301, {
-                "Location": urlData.longUrl
+                Location: urlData.longUrl,
             });
-            return res.end()
+            return res.end();
             // return res.status(200).send({status:true,data:urlData})
         }
 
         const chkUrlCode = await urlModel.findOne({
-            urlCode: urlCode
-        })
+            urlCode: urlCode,
+        });
 
-        if (!chkUrlCode) return res.status(404).send({
-            status: false,
-            message: "Url Not Found!"
-        })
+        if (!chkUrlCode)
+            return res.status(404).send({
+                status: false,
+                message: "Url Not Found!",
+            });
 
         // store as catch
         await SET_ASYNC(`${chkUrlCode.urlCode}`, JSON.stringify(chkUrlCode));
-        console.log("From Mongo DB")
+        // console.log("From Mongo DB");
 
         res.writeHead(301, {
-            "Location": chkUrlCode.longUrl
+            Location: chkUrlCode.longUrl,
         });
-        res.end()
+        res.end();
         // return res.status(200).send({status:true,data:chkUrlCode})
-
-
     } catch (err) {
         res.status(500).send({
             status: false,
-            message: e.message
-        })
+            message: e.message,
+        });
     }
-
-}
-
-
+};
 
 module.exports = {
     create,
-    redirectUrl
-}
+    redirectUrl,
+};
