@@ -37,7 +37,7 @@ const create = async (req, res) => {
 
 
 
-        const getUrlFromCatch = await GET_ASYNC(`URLX_${longUrl}`);
+        const getUrlFromCatch = await GET_ASYNC(longUrl);
         if (getUrlFromCatch) {
             //return data
             // console.log('get data from cache')
@@ -65,7 +65,7 @@ const create = async (req, res) => {
 
         if (isExistLongUrl) {
             // console.log('get data DB and its already exist')
-            await SET_ASYNC(`URLX_${longUrl}`, JSON.stringify(isExistLongUrl));
+            await SET_ASYNC(`${longUrl}`, JSON.stringify(isExistLongUrl));
             return res.status(200).send({
                 status: true,
                 data: isExistLongUrl,
@@ -84,7 +84,7 @@ const create = async (req, res) => {
         /*--------- save in db ----------*/
         await urlModel.create(rawData);
         // console.log('newly created data')
-        await SET_ASYNC(`URLX_${longUrl}`, JSON.stringify(rawData)); //
+        await SET_ASYNC(`${longUrl}`, JSON.stringify(rawData)); //
         res.status(200).send({
             status: true,
             data: rawData,
@@ -103,9 +103,8 @@ const redirectUrl = async (req, res) => {
         const getUrlFromCatch = await GET_ASYNC(urlCode);
         if (getUrlFromCatch) {
             // console.log("From Redis");
-            let urlData = JSON.parse(getUrlFromCatch);
             res.writeHead(301, {
-                Location: urlData.longUrl,
+                Location: getUrlFromCatch,
             });
             return res.end();
             // return res.status(200).send({status:true,data:urlData})
@@ -122,7 +121,7 @@ const redirectUrl = async (req, res) => {
             });
 
         // store as catch
-        await SET_ASYNC(`${chkUrlCode.urlCode}`, JSON.stringify(chkUrlCode));
+        await SET_ASYNC(`${chkUrlCode.urlCode}`, chkUrlCode.longUrl);
         // console.log("From Mongo DB");
 
         res.writeHead(301, {
