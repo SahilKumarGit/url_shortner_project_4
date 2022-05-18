@@ -1,6 +1,11 @@
 const shortid = require('shortid');
 const validation = require('./../utility/validation');
 const urlModel = require('./../models/urlModel');
+const {
+    SET_ASYNC,
+    GET_ASYNC
+} = require('../redis.config');
+
 const create = async (req, res) => {
     try {
         const data = req.body
@@ -32,7 +37,7 @@ const create = async (req, res) => {
         const isExistUrlCode = await urlModel.findOne({
             urlCode: urlCode
         })
-        if (isExistUrlCode) return res.status(404).send({
+        if (isExistUrlCode) return res.status(404).send({  //⚠️
             status: false,
             message: `Something wents worng, generated urlCode is already exist. Please try again!`
         })
@@ -70,9 +75,18 @@ const create = async (req, res) => {
 }
 
 const redirectUrl = async (req, res) => {
-
     try {
         const urlCode = req.params.urlCode
+        const getUrlFromCatch = await GET_ASYNC(urlCode)
+        if (getUrlFromCatch) {
+            console.log("From Redis")
+            let urlData = JSON.parse(getUrlFromCatch)
+            res.writeHead(301, {
+                "Location": urlData.longUrl
+            });
+            return res.end()
+            // return res.status(200).send({status:true,data:urlData})
+        }
 
         const chkUrlCode = await urlModel.findOne({
             urlCode: urlCode
@@ -83,10 +97,15 @@ const redirectUrl = async (req, res) => {
             message: "Url Not Found!"
         })
 
+        // store as catch
+        await SET_ASYNC(`${chkUrlCode.urlCode}`, JSON.stringify(chkUrlCode));
+        console.log("From Mongo DB")
+
         res.writeHead(301, {
             "Location": chkUrlCode.longUrl
         });
         res.end()
+        // return res.status(200).send({status:true,data:chkUrlCode})
 
 
     } catch (err) {
