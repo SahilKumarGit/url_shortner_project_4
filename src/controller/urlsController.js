@@ -103,11 +103,7 @@ const redirectUrl = async (req, res) => {
         const getUrlFromCatch = await GET_ASYNC(urlCode);
         if (getUrlFromCatch) {
             // console.log("From Redis");
-            res.writeHead(301, {
-                Location: getUrlFromCatch,
-            });
-            return res.end();
-            // return res.status(200).send({status:true,data:urlData})
+            return res.redirect(301, getUrlFromCatch)
         }
 
         const chkUrlCode = await urlModel.findOne({
@@ -123,12 +119,8 @@ const redirectUrl = async (req, res) => {
         // store as catch
         await SET_ASYNC(`${chkUrlCode.urlCode}`, chkUrlCode.longUrl);
         // console.log("From Mongo DB");
+        return res.redirect(301, chkUrlCode.longUrl)
 
-        res.writeHead(301, {
-            Location: chkUrlCode.longUrl,
-        });
-        res.end();
-        // return res.status(200).send({status:true,data:chkUrlCode})
     } catch (err) {
         res.status(500).send({
             status: false,
