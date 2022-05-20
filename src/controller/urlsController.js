@@ -42,7 +42,7 @@ const create = async (req, res) => {
             //return data
             // console.log('get data from cache')
             const urlData = JSON.parse(getUrlFromCatch)
-            return res.status(200).send({
+            return res.status(201).send({
                 status: true,
                 data: {
                     urlCode: urlData.urlCode,
@@ -66,7 +66,7 @@ const create = async (req, res) => {
         if (isExistLongUrl) {
             // console.log('get data DB and its already exist')
             await SET_ASYNC(`${longUrl}`, JSON.stringify(isExistLongUrl));
-            return res.status(200).send({
+            return res.status(201).send({
                 status: true,
                 data: isExistLongUrl,
             });
@@ -85,7 +85,7 @@ const create = async (req, res) => {
         await urlModel.create(rawData);
         // console.log('newly created data')
         await SET_ASYNC(`${longUrl}`, JSON.stringify(rawData)); //
-        res.status(200).send({
+        res.status(201).send({
             status: true,
             data: rawData,
         });
