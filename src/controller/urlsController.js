@@ -121,7 +121,7 @@ const redirectUrl = async (req, res) => {
         // console.log("From Mongo DB");
         return res.redirect(301, chkUrlCode.longUrl)
 
-    } catch (err) {
+    } catch (e) {
         res.status(500).send({
             status: false,
             message: e.message,
